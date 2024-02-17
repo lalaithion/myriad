@@ -28,17 +28,18 @@ Simulation: 54 ms,	Rendering: 3033 microseconds
 Number of Particles: 50000
 Number of Pixels: 1000000
 =====================================
-Simulation: 19 ms,	Rendering: 3232 microseconds
-Simulation: 20 ms,	Rendering: 2881 microseconds
-Simulation: 20 ms,	Rendering: 2771 microseconds
-Simulation: 20 ms,	Rendering: 3024 microseconds
-Simulation: 20 ms,	Rendering: 2990 microseconds
-Simulation: 20 ms,	Rendering: 2899 microseconds
-Simulation: 20 ms,	Rendering: 2891 microseconds
-Simulation: 20 ms,	Rendering: 2874 microseconds
-Simulation: 19 ms,	Rendering: 2794 microseconds
-Simulation: 20 ms,	Rendering: 3009 microseconds
-Simulation: 20 ms,	Rendering: 3045 microseconds
+Simulation: 113 ms,	Rendering: 3565 microseconds
+Simulation: 110 ms,	Rendering: 3480 microseconds
+Simulation: 105 ms,	Rendering: 3387 microseconds
+Simulation: 102 ms,	Rendering: 3404 microseconds
+Simulation: 103 ms,	Rendering: 3330 microseconds
+Simulation: 104 ms,	Rendering: 3420 microseconds
+Simulation: 106 ms,	Rendering: 3339 microseconds
+Simulation: 106 ms,	Rendering: 3358 microseconds
+Simulation: 104 ms,	Rendering: 3390 microseconds
+Simulation: 106 ms,	Rendering: 3444 microseconds
+Simulation: 108 ms,	Rendering: 3520 microseconds
+Simulation: 102 ms,	Rendering: 3432 microseconds
 ```
 
 ## Bubble Sort
@@ -75,4 +76,4 @@ Simulation: 21 ms,	Rendering: 3105 microseconds
 
 ## Conclusion
 
-Looks like Radix is the fastest!
+Looks like Bitonic is the fastest!

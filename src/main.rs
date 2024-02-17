@@ -48,9 +48,6 @@ fn main() -> Result<(), pixels::Error> {
 
     let ctx: &'static Context = Box::leak(Box::new(Context::new().expect("ERROR: Context::new()")));
 
-    // Initialize random world...
-    let mut rng = rand::thread_rng();
-
     let mut raw_types = [0 as i8; PARTICLES];
     let mut raw_x = [0.0 as f32; PARTICLES];
     let mut raw_y = [0.0 as f32; PARTICLES];
