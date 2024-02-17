@@ -9,7 +9,6 @@ use pixels::{Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
@@ -17,18 +16,11 @@ use rand::Rng;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
-const SCALE: f32 = 8.0;
-const SHAPE: f32 = 12.0;
+const SCALE: f32 = 10.0;
+const SHAPE: f32 = 20.0;
 
-const TYPES: i8 = 7;
-const PARTICLES: usize = 20_000;
-
-#[derive(Clone, Copy)]
-struct Particle {
-    x: f32,
-    y: f32,
-    t: i8,
-}
+const TYPES: i8 = 5;
+const PARTICLES: usize = 40_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -73,9 +65,9 @@ fn main() -> Result<(), pixels::Error> {
     raw_y.sort_floats();
 
     let mut raw_forces = [0.0 as f32; TYPES as usize * TYPES as usize];
-    for i in 0..TYPES {
-        for j in 0..TYPES {
-            raw_forces[(i * TYPES + j) as usize] = rng.gen_range(-1.0..1.0);
+    for i in 0..(TYPES as usize) {
+        for j in 0..(TYPES as usize) {
+            raw_forces[i * (TYPES as usize) + j] = rng.gen_range(-1.0..1.0);
         }
     }
 
@@ -101,7 +93,6 @@ fn main() -> Result<(), pixels::Error> {
         WindowBuilder::new()
             .with_title("Hello Pixels")
             .with_inner_size(size)
-            .with_disallow_hidpi(false)
             .with_min_inner_size(size)
             .build(&event_loop)
             .unwrap()
@@ -113,7 +104,6 @@ fn main() -> Result<(), pixels::Error> {
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
 
-    let mut world = Vec::with_capacity(PARTICLES);
     let mut sim_durations = Vec::with_capacity(100);
     let mut render_durations = Vec::with_capacity(100);
     let mut timing_start = std::time::Instant::now();
@@ -130,20 +120,32 @@ fn main() -> Result<(), pixels::Error> {
             px.values(&mut res_x).expect("ERROR: px.get()");
             py.values(&mut res_y).expect("ERROR: py.get()");
             types.values(&mut res_t).expect("ERROR: types.get()");
-            world.clear();
-            for ((x, y), t) in res_x.iter().zip(res_y.iter()).zip(res_t.iter()) {
-                world.push(Particle {
-                    x: *x,
-                    y: *y,
-                    t: *t,
-                });
-            }
 
             let end = std::time::Instant::now();
             sim_durations.push(end - start);
 
             let start = std::time::Instant::now();
-            draw_pixel(pixels.frame_mut(), &world, &reds, &greens, &blues);
+
+            let frame = pixels.frame_mut();
+            frame.fill(0x00);
+
+            for ((px, py), t) in res_x.iter().zip(res_y.iter()).zip(res_t.iter()) {
+                let x = ((px + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
+                let y = ((py + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
+
+                if x >= WIDTH as i64 || y >= HEIGHT as i64 || x < 0 || y < 0 {
+                    continue;
+                }
+                if 4 * (x + y * WIDTH as i64) as usize >= frame.len() {
+                    dbg!(x, y, px, py, frame.len());
+                    continue;
+                }
+                let idx = 4 * (x + y * WIDTH as i64) as usize;
+                frame[idx] = reds[*t as usize];
+                frame[idx + 1] = greens[*t as usize];
+                frame[idx + 2] = blues[*t as usize];
+                frame[idx + 3] = 0xFF;
+            }
             if let Err(err) = pixels.render() {
                 log_error("pixels.render", err);
                 *control_flow = ControlFlow::Exit;
@@ -202,27 +204,5 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E) {
     error!("{method_name}() failed: {err}");
     for source in err.sources().skip(1) {
         error!("  Caused by: {source}");
-    }
-}
-
-fn draw_pixel(frame: &mut [u8], particles: &[Particle], reds: &[u8], greens: &[u8], blues: &[u8]) {
-    frame.fill(0x00);
-
-    for p in particles {
-        let x = ((p.x + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
-        let y = ((p.y + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
-
-        if x >= WIDTH as i64 || y >= HEIGHT as i64 || x < 0 || y < 0 {
-            continue;
-        }
-        if 4 * (x + y * WIDTH as i64) as usize >= frame.len() {
-            dbg!(x, y, p.x, p.y, frame.len());
-            continue;
-        }
-        let idx = 4 * (x + y * WIDTH as i64) as usize;
-        frame[idx] = reds[p.t as usize];
-        frame[idx + 1] = greens[p.t as usize];
-        frame[idx + 2] = blues[p.t as usize];
-        frame[idx + 3] = 0xFF;
     }
 }
