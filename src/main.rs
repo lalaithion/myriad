@@ -9,16 +9,18 @@ use pixels::{Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
+use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
 use rand::Rng;
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 800;
-const SCALE: f32 = 5.0;
+const WIDTH: u32 = 1000;
+const HEIGHT: u32 = 1000;
+const SCALE: f32 = 15.0;
+const SHAPE: f32 = 15.0;
 
-const TYPES: i8 = 4;
+const TYPES: i8 = 7;
 const PARTICLES: usize = 12_000;
 
 #[derive(Clone, Copy)]
@@ -57,10 +59,14 @@ fn main() -> Result<(), pixels::Error> {
 
     for i in 0..PARTICLES {
         raw_types[i] = rng.gen_range(0..TYPES);
-        raw_x[i] =
-            (rng.gen_range(-8.0..8.0) + rng.gen_range(-8.0..8.0) + rng.gen_range(-8.0..8.0)) / 3.0;
-        raw_y[i] =
-            (rng.gen_range(-8.0..8.0) + rng.gen_range(-8.0..8.0) + rng.gen_range(-8.0..8.0)) / 3.0;
+        raw_x[i] = (rng.gen_range(-SHAPE..SHAPE)
+            + rng.gen_range(-SHAPE..SHAPE)
+            + rng.gen_range(-SHAPE..SHAPE))
+            / 3.0;
+        raw_y[i] = (rng.gen_range(-SHAPE..SHAPE)
+            + rng.gen_range(-SHAPE..SHAPE)
+            + rng.gen_range(-SHAPE..SHAPE))
+            / 3.0;
         raw_vx[i] =
             (rng.gen_range(-1.0..1.0) + rng.gen_range(-1.0..1.0) + rng.gen_range(-1.0..1.0)) / 30.0;
         raw_vy[i] =
@@ -98,6 +104,7 @@ fn main() -> Result<(), pixels::Error> {
         WindowBuilder::new()
             .with_title("Hello Pixels")
             .with_inner_size(size)
+            .with_disallow_hidpi(false)
             .with_min_inner_size(size)
             .build(&event_loop)
             .unwrap()
