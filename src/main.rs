@@ -13,9 +13,7 @@ use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-use rand::rngs::StdRng;
 use rand::Rng;
-use rand::SeedableRng;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
