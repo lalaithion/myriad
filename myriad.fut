@@ -1,4 +1,4 @@
-import "lib/github.com/diku-dk/sorts/radix_sort"
+import "lib/github.com/diku-dk/sorts/bitonic_sort"
 
 def binarySearch [n] 't (lte: t -> bool) (xs: [n]t) : i64 =
   let (l, _) =
@@ -109,5 +109,5 @@ entry step [n][m]
     (dt: f32):
     ([n]i8, [n]f32, [n]f32, [n]f32, [n]f32) =
     let particles = zip5 types velocity_x velocity_y position_x position_y
-    let particles' = radix_sort_float_by_key (\(_, _, _, _, y) -> y) f32.num_bits f32.get_bit particles
+    let particles' = radix_sort_float_by_key (\(_, _, _, _, y) -> y)  f32.num_bits f32.get_bit particles
     in unzip5 (step_body forces particles' dt)

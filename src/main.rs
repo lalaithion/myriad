@@ -17,11 +17,11 @@ use rand::Rng;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
-const SCALE: f32 = 15.0;
-const SHAPE: f32 = 15.0;
+const SCALE: f32 = 20.0;
+const SHAPE: f32 = 50.0;
 
 const TYPES: i8 = 7;
-const PARTICLES: usize = 12_000;
+const PARTICLES: usize = 50_000;
 
 #[derive(Clone, Copy)]
 struct Particle {
