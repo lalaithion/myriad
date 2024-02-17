@@ -1,2 +1,5 @@
 simulation.py
 __pycache__/*
+/target
+myriad
+myriad.c
