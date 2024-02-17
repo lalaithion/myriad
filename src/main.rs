@@ -6,7 +6,7 @@ include!(concat!(env!("OUT_DIR"), "/myriad.rs"));
 use error_iter::ErrorIter as _;
 use log::error;
 use pixels::{Pixels, SurfaceTexture};
-use winit::dpi::LogicalSize;
+use winit::dpi::PhysicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
@@ -14,13 +14,13 @@ use winit_input_helper::WinitInputHelper;
 
 use rand::Rng;
 
-const WIDTH: u32 = 1000;
-const HEIGHT: u32 = 1000;
-const SCALE: f32 = 10.0;
-const SHAPE: f32 = 20.0;
+const WIDTH: u32 = 1500;
+const HEIGHT: u32 = 1500;
+const SCALE: f32 = 5.0;
+const SHAPE: f32 = 12.0;
 
 const TYPES: i8 = 5;
-const PARTICLES: usize = 40_000;
+const PARTICLES: usize = 30_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -89,7 +89,7 @@ fn main() -> Result<(), pixels::Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+        let size = PhysicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
             .with_title("Hello Pixels")
             .with_inner_size(size)

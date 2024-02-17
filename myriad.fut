@@ -77,7 +77,7 @@ def clamp (x: f32) (a: f32) (b: f32): f32 =
 -- This is a simple quadratic drag model. Real drag is linear at low speeds.
 -- To change this to a simple _friction_ model instead of a drag model, just make
 -- this to `v - 0.05 * v`.
-def applyDrag (v: f32): f32 = if f32.abs v < 1.0 then v - 0.05 * v else v - clamp (0.05 * signedSquare(v)) 0 (v)
+def applyDrag (v: f32): f32 = if f32.abs v < 1.0 then v - 0.05 * v else v - clamp (0.05 * signedSquare(v)) 0 (v-0.5)
 
 def step_body [n][m] 
     (forces: [m][m]f32) 
