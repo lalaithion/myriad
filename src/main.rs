@@ -13,7 +13,9 @@ use winit::platform::macos::WindowBuilderExtMacOS;
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
+use rand::rngs::StdRng;
 use rand::Rng;
+use rand::SeedableRng;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -39,7 +41,7 @@ fn main() -> Result<(), pixels::Error> {
     let mut greens = [0 as u8; TYPES as usize];
     let mut blues = [0 as u8; TYPES as usize];
 
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::seed_from_u64(3);
     for i in 0..TYPES {
         reds[i as usize] = rng.gen();
         greens[i as usize] = rng.gen();

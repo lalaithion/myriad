@@ -1,4 +1,4 @@
-import "lib/github.com/diku-dk/sorts/bitonic_sort"
+import "lib/github.com/diku-dk/sorts/merge_sort"
 
 def binarySearch [n] 't (lte: t -> bool) (xs: [n]t) : i64 =
   let (l, _) =
@@ -10,14 +10,14 @@ def binarySearch [n] 't (lte: t -> bool) (xs: [n]t) : i64 =
   in l
 
 def rangeSearch [n] (low: f32) (high: f32) (xs: [n]f32) : (i64, i64) =
-  let (l, _) =
-    loop (l, r) = (0, n-1) while l < r do
+  let (l, _, m) =
+    loop (l, r, m) = (0, n-1, n-1) while l < r do
     let t = l + (r - l) / 2
     in if low <= xs[t]
-       then (l, t)
-       else (t+1, r)
+       then (l, t, if xs[t] >= high then t else m)
+       else (t+1, r, m)
   let (h, _) = 
-    loop (l, r) = (l, n-1) while l < r do
+    loop (l, r) = (l, m) while l < r do
     let t = l + (r - l) / 2
     in if high <= xs[t]
        then (l, t)
@@ -109,6 +109,5 @@ entry step [n][m]
     (dt: f32):
     ([n]i8, [n]f32, [n]f32, [n]f32, [n]f32) =
     let particles = zip5 types velocity_x velocity_y position_x position_y
-    -- let particles' = radix_sort_float_by_key (\(_, _, _, _, y) -> y)  f32.num_bits f32.get_bit particles
-    let particles' = bitonic_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
+    let particles' = merge_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
     in unzip5 (step_body forces particles' dt)
