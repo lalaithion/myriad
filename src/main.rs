@@ -19,11 +19,11 @@ use rand::SeedableRng;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
-const SCALE: f32 = 20.0;
-const SHAPE: f32 = 50.0;
+const SCALE: f32 = 8.0;
+const SHAPE: f32 = 12.0;
 
 const TYPES: i8 = 7;
-const PARTICLES: usize = 50_000;
+const PARTICLES: usize = 20_000;
 
 #[derive(Clone, Copy)]
 struct Particle {
@@ -41,7 +41,7 @@ fn main() -> Result<(), pixels::Error> {
     let mut greens = [0 as u8; TYPES as usize];
     let mut blues = [0 as u8; TYPES as usize];
 
-    let mut rng = StdRng::seed_from_u64(3);
+    let mut rng = rand::thread_rng();
     for i in 0..TYPES {
         reds[i as usize] = rng.gen();
         greens[i as usize] = rng.gen();
@@ -126,7 +126,7 @@ fn main() -> Result<(), pixels::Error> {
             let start = std::time::Instant::now();
 
             (types, vx, vy, px, py) = ctx
-                .step(&forces, &types, &vx, &vy, &px, &py, 0.01)
+                .step(&forces, &types, &vx, &vy, &px, &py, 0.005)
                 .expect("ERROR: ctx.step()");
 
             px.values(&mut res_x).expect("ERROR: px.get()");
