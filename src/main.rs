@@ -6,21 +6,22 @@ include!(concat!(env!("OUT_DIR"), "/myriad.rs"));
 use error_iter::ErrorIter as _;
 use log::error;
 use pixels::{Pixels, SurfaceTexture};
+use thousands::Separable;
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 
 const WIDTH: u32 = 1500;
 const HEIGHT: u32 = 1500;
 const SCALE: f32 = 5.0;
-const SHAPE: f32 = 12.0;
+const SHAPE: f32 = 8.0;
 
-const TYPES: i8 = 5;
-const PARTICLES: usize = 30_000;
+const TYPES: i8 = 13;
+const PARTICLES: usize = 40_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -31,11 +32,18 @@ fn main() -> Result<(), pixels::Error> {
     let mut greens = [0 as u8; TYPES as usize];
     let mut blues = [0 as u8; TYPES as usize];
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rngs::StdRng::from_seed([1; 32]);
     for i in 0..TYPES {
         reds[i as usize] = rng.gen();
         greens[i as usize] = rng.gen();
         blues[i as usize] = rng.gen();
+    }
+
+    let mut raw_forces = [0.0 as f32; TYPES as usize * TYPES as usize];
+    for i in 0..(TYPES as usize) {
+        for j in 0..(TYPES as usize) {
+            raw_forces[i * (TYPES as usize) + j] = rng.gen_range(-1.0..1.0);
+        }
     }
 
     let ctx: &'static Context = Box::leak(Box::new(Context::new().expect("ERROR: Context::new()")));
@@ -63,13 +71,6 @@ fn main() -> Result<(), pixels::Error> {
     }
 
     raw_y.sort_floats();
-
-    let mut raw_forces = [0.0 as f32; TYPES as usize * TYPES as usize];
-    for i in 0..(TYPES as usize) {
-        for j in 0..(TYPES as usize) {
-            raw_forces[i * (TYPES as usize) + j] = rng.gen_range(-1.0..1.0);
-        }
-    }
 
     let forces = ArrayF32D2::new(&ctx, [TYPES as i64, TYPES as i64], &raw_forces)
         .expect("ERROR: forces.new()");
@@ -105,6 +106,7 @@ fn main() -> Result<(), pixels::Error> {
     };
 
     let mut sim_durations = Vec::with_capacity(100);
+    let mut transfer_durations = Vec::with_capacity(100);
     let mut render_durations = Vec::with_capacity(100);
     let mut timing_start = std::time::Instant::now();
 
@@ -114,16 +116,19 @@ fn main() -> Result<(), pixels::Error> {
             let start = std::time::Instant::now();
 
             (types, vx, vy, px, py) = ctx
-                .step(&forces, &types, &vx, &vy, &px, &py, 0.005)
+                .step(&forces, &types, &vx, &vy, &px, &py, 0.001)
                 .expect("ERROR: ctx.step()");
+
+            let end = std::time::Instant::now();
+            sim_durations.push(end - start);
+            let start = std::time::Instant::now();
 
             px.values(&mut res_x).expect("ERROR: px.get()");
             py.values(&mut res_y).expect("ERROR: py.get()");
             types.values(&mut res_t).expect("ERROR: types.get()");
 
             let end = std::time::Instant::now();
-            sim_durations.push(end - start);
-
+            transfer_durations.push(end - start);
             let start = std::time::Instant::now();
 
             let frame = pixels.frame_mut();
@@ -154,19 +159,24 @@ fn main() -> Result<(), pixels::Error> {
             let end = std::time::Instant::now();
             render_durations.push(end - start);
 
-            if std::time::Instant::now() - timing_start > std::time::Duration::from_secs(5) {
+            if std::time::Instant::now() - timing_start > std::time::Duration::from_secs(10) {
                 println!(
-                    "Simulation: {:?} ms,\tRendering: {:?} microseconds",
-                    sim_durations
+                    "Simulation: {} microseconds,\tTransferring: {} microseconds,\tRendering: {} microseconds",
+                    (sim_durations
                         .iter()
                         .sum::<std::time::Duration>()
-                        .as_millis()
-                        / sim_durations.len() as u128,
-                    render_durations
+                        .as_micros() as u64
+                        / sim_durations.len() as u64).separate_with_commas(),
+                    (transfer_durations
                         .iter()
                         .sum::<std::time::Duration>()
-                        .as_micros()
-                        / render_durations.len() as u128,
+                        .as_micros() as u64
+                        / transfer_durations.len() as u64).separate_with_commas(),
+                    (render_durations
+                        .iter()
+                        .sum::<std::time::Duration>()
+                        .as_micros() as u64
+                        / render_durations.len() as u64).separate_with_commas(),
                 );
                 timing_start = std::time::Instant::now();
                 sim_durations.clear();

@@ -1,23 +1,14 @@
 import "lib/github.com/diku-dk/sorts/merge_sort"
 
-def binarySearch [n] 't (lte: t -> bool) (xs: [n]t) : i64 =
-  let (l, _) =
-    loop (l, r) = (0, n-1) while l < r do
-    let t = l + (r - l) / 2
-    in if lte xs[t]
-       then (l, t)
-       else (t+1, r)
-  in l
-
 def rangeSearch [n] (low: f32) (high: f32) (xs: [n]f32) : (i64, i64) =
-  let (l, _, m) =
-    loop (l, r, m) = (0, n-1, n-1) while l < r do
+  let (l, _, hl, hr) =
+    loop (l, r, hl, hr) = (0, n-1, 0, n-1) while l < r do
     let t = l + (r - l) / 2
     in if low <= xs[t]
-       then (l, t, if xs[t] >= high then t else m)
-       else (t+1, r, m)
+       then (l, t, if high <= xs[t] then hl else t, if high <= xs[t] then t else hr)
+       else (t+1, r, if t+1 > hl then t+1 else hl, hr)
   let (h, _) = 
-    loop (l, r) = (l, m) while l < r do
+    loop (l, r) = (hl, hr) while l < r do
     let t = l + (r - l) / 2
     in if high <= xs[t]
        then (l, t)
@@ -85,7 +76,7 @@ def step_body [n][m]
     (dt: f32):
     [n](i8, f32, f32, f32, f32)
     = map (\(t, vx, vy, px, py) -> 
-      let (start, end) = rangeSearch (py-1.0) (py+1.0) (map (\(_, _, _, _, y) -> y) particles)
+        let (start, end) = rangeSearch (py-1.0) (py+1.0) (map (\(_, _, _, _, y) -> y) particles)
         let (fx, fy) = reduce_comm (\(ax, ay) (bx, by) -> (ax + bx, ay + by)) (0.0,0.0) (
             map (\(ot, _, _, ox, oy) -> if ox == px && oy == py then (0.0, 0.0) else -- don't apply force to self
                 let dx = ox - px
@@ -111,3 +102,18 @@ entry step [n][m]
     let particles = zip5 types velocity_x velocity_y position_x position_y
     let particles' = merge_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
     in unzip5 (step_body forces particles' dt)
+
+  entry multistep [n][m] 
+    (forces: [m][m]f32) 
+    (types: [n]i8)
+    (velocity_x: [n]f32)
+    (velocity_y: [n]f32)
+    (position_x: [n]f32)
+    (position_y: [n]f32)
+    (dt: f32)
+    (steps: i64):
+    ([n]i8, [n]f32, [n]f32, [n]f32, [n]f32) =
+    let res = loop particles = zip5 types velocity_x velocity_y position_x position_y for i < steps do
+      let particles' = merge_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
+      in step_body forces particles' dt
+    in unzip5 res
