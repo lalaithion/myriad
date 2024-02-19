@@ -17,11 +17,11 @@ use rand::{Rng, SeedableRng};
 
 const WIDTH: u32 = 1300;
 const HEIGHT: u32 = 1300;
-const SCALE: f32 = 20.0;
-const SHAPE: f32 = 15.0;
+const SCALE: f32 = 6.0;
+const SHAPE: f32 = 6.0;
 
-const TYPES: i8 = 5;
-const PARTICLES: usize = 60_000;
+const TYPES: i8 = 6;
+const PARTICLES: usize = 10_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -140,18 +140,29 @@ fn main() -> Result<(), pixels::Error> {
                 let x = ((px + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
                 let y = ((py + SCALE) / (2.0 * SCALE) * HEIGHT as f32) as i64;
 
-                if x >= WIDTH as i64 || y >= HEIGHT as i64 || x < 0 || y < 0 {
-                    continue;
+                for i in -2..=2 {
+                    let dj = if i == -2 || i == 2 {
+                        1
+                    } else {
+                        2
+                    };
+                    for j in -dj..=dj {
+                        let x = x + i;
+                        let y = y + j;
+                        if x >= WIDTH as i64 || y >= HEIGHT as i64 || x < 0 || y < 0 {
+                            continue;
+                        }
+                        if 4 * (x + y * WIDTH as i64) as usize >= frame.len() {
+                            dbg!(x, y, px, py, frame.len());
+                            continue;
+                        }
+                        let idx = 4 * (x + y * WIDTH as i64) as usize;
+                        frame[idx] = reds[*t as usize];
+                        frame[idx + 1] = greens[*t as usize];
+                        frame[idx + 2] = blues[*t as usize];
+                        frame[idx + 3] = 0xFF;
+                    }
                 }
-                if 4 * (x + y * WIDTH as i64) as usize >= frame.len() {
-                    dbg!(x, y, px, py, frame.len());
-                    continue;
-                }
-                let idx = 4 * (x + y * WIDTH as i64) as usize;
-                frame[idx] = reds[*t as usize];
-                frame[idx + 1] = greens[*t as usize];
-                frame[idx + 2] = blues[*t as usize];
-                frame[idx + 3] = 0xFF;
             }
             if let Err(err) = pixels.render() {
                 log_error("pixels.render", err);
@@ -161,7 +172,7 @@ fn main() -> Result<(), pixels::Error> {
             let end = std::time::Instant::now();
             render_durations.push(end - start);
 
-            if std::time::Instant::now() - timing_start > std::time::Duration::from_secs(10) {
+            if std::time::Instant::now() - timing_start > std::time::Duration::from_secs(30) {
                 println!(
                     "Simulation: {} microseconds,\tTransferring: {} microseconds,\tRendering: {} microseconds",
                     (sim_durations

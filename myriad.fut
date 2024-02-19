@@ -44,7 +44,7 @@ def originalForce (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) =
         else 0
     in (force * dx / d, force * dy / d)
 
-def cheapForce (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) = 
+def simpleForce (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) = 
     let exclusion = 0.05 / (d*d) - 0.05
     let attraction = coupling * (1 - d)
     let force = attraction - exclusion
@@ -52,23 +52,14 @@ def cheapForce (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) =
 
 -- terms reorganized in an incomprehensible way to only do one division instead of three
 -- see https://www.wolframalpha.com/input?i=%28c%281-x%29+-+%28b%2Fx%5E2+-+b%29%29%2Fx
-def cheapForceSimple (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) = 
+def simpleForceCheap (d: f32) (coupling: f32) (dx: f32) (dy: f32): (f32, f32) = 
     let d2 = d*d
     let d3 = d2*d
     let forceperd = (0.05 * d2 - 0.05 + d2 * coupling * (1-d))/d3
     in (forceperd * dx, forceperd * dy)
 
-def signedSquare (x: f32): f32 = if x < 0 then -x*x else x*x
-
-def clamp (x: f32) (a: f32) (b: f32): f32 = 
-  let min = if a < b then a else b
-  let max = if a < b then b else a
-  in if x < min then min else if x > max then max else x
-
--- This is a simple quadratic drag model. Real drag is linear at low speeds.
--- To change this to a simple _friction_ model instead of a drag model, just make
--- this to `v - 0.05 * v`.
-def applyDrag (v: f32): f32 = if f32.abs v < 1.0 then v - 0.05 * v else v - clamp (0.05 * signedSquare(v)) 0 (v-0.5)
+-- This starts with a linear friction/drag model, but once we get above a speed of 1, we switch to a sigmoidal model that saturates at 1.5
+def drag (v: f32): f32 = if f32.abs v < 1.0 then 0.95 * v else 2.0 / (1.0 + f32.exp(-1.9 * v + 1.0)) - 0.473
 
 def step_body [n][m] 
     (forces: [m][m]f32) 
@@ -77,17 +68,16 @@ def step_body [n][m]
     [n](i8, f32, f32, f32, f32)
     = map (\(t, vx, vy, px, py) -> 
         let (start, end) = rangeSearch (py-1.0) (py+1.0) (map (\(_, _, _, _, y) -> y) particles)
-        let (fx, fy) = reduce_comm (\(ax, ay) (bx, by) -> (ax + bx, ay + by)) (0.0,0.0) (
-            map (\(ot, _, _, ox, oy) -> if ox == px && oy == py then (0.0, 0.0) else -- don't apply force to self
+        let (fx, fy) = reduce_comm (\(ax, ay) (bx, by) -> (ax + bx, ay + by)) (0.0, 0.0) (
+            map (\(ot, _, _, ox, oy) ->
                 let dx = ox - px
                 let dy = oy - py
-                let sqd = dx*dx + dy*dy
-                in if sqd > 1.0 then (0.0, 0.0) else
-                    let d = f32.sqrt sqd
-                    let coupling = forces[t][ot]
-                    in cheapForceSimple d coupling dx dy
+                let d = f32.sqrt (dx*dx + dy*dy)
+                in if d > 1.0 || d == 0
+                    then (0.0, 0.0)
+                    else simpleForceCheap d forces[t][ot] dx dy
             ) particles[start:end])
-        in (t, applyDrag(vx + fx * dt), applyDrag(vy + fy * dt), px + vx * dt, py + vy * dt)
+        in (t, drag(vx + fx * dt), drag(vy + fy * dt), px + vx * dt, py + vy * dt)
     ) particles
 
 entry step [n][m] 
