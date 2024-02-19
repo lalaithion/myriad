@@ -15,13 +15,13 @@ use winit_input_helper::WinitInputHelper;
 
 use rand::{Rng, SeedableRng};
 
-const WIDTH: u32 = 1500;
-const HEIGHT: u32 = 1500;
-const SCALE: f32 = 5.0;
-const SHAPE: f32 = 8.0;
+const WIDTH: u32 = 1300;
+const HEIGHT: u32 = 1300;
+const SCALE: f32 = 20.0;
+const SHAPE: f32 = 15.0;
 
-const TYPES: i8 = 13;
-const PARTICLES: usize = 40_000;
+const TYPES: i8 = 5;
+const PARTICLES: usize = 60_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -32,7 +32,8 @@ fn main() -> Result<(), pixels::Error> {
     let mut greens = [0 as u8; TYPES as usize];
     let mut blues = [0 as u8; TYPES as usize];
 
-    let mut rng = rand::rngs::StdRng::from_seed([1; 32]);
+    // let mut rng = rand::rngs::StdRng::from_seed([1; 32]);
+    let mut rng = rand::thread_rng();
     for i in 0..TYPES {
         reds[i as usize] = rng.gen();
         greens[i as usize] = rng.gen();
@@ -116,8 +117,9 @@ fn main() -> Result<(), pixels::Error> {
             let start = std::time::Instant::now();
 
             (types, vx, vy, px, py) = ctx
-                .step(&forces, &types, &vx, &vy, &px, &py, 0.001)
+                .step(&forces, &types, &vx, &vy, &px, &py, 0.005)
                 .expect("ERROR: ctx.step()");
+            ctx.sync();
 
             let end = std::time::Instant::now();
             sim_durations.push(end - start);

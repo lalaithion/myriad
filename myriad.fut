@@ -102,18 +102,3 @@ entry step [n][m]
     let particles = zip5 types velocity_x velocity_y position_x position_y
     let particles' = merge_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
     in unzip5 (step_body forces particles' dt)
-
-  entry multistep [n][m] 
-    (forces: [m][m]f32) 
-    (types: [n]i8)
-    (velocity_x: [n]f32)
-    (velocity_y: [n]f32)
-    (position_x: [n]f32)
-    (position_y: [n]f32)
-    (dt: f32)
-    (steps: i64):
-    ([n]i8, [n]f32, [n]f32, [n]f32, [n]f32) =
-    let res = loop particles = zip5 types velocity_x velocity_y position_x position_y for i < steps do
-      let particles' = merge_sort_by_key (\(_, _, _, _, y) -> y) (\a b -> a <= b) particles
-      in step_body forces particles' dt
-    in unzip5 res
