@@ -15,13 +15,13 @@ use winit_input_helper::WinitInputHelper;
 
 use rand::{Rng, SeedableRng};
 
-const WIDTH: u32 = 1300;
-const HEIGHT: u32 = 1300;
-const SCALE: f32 = 6.0;
-const SHAPE: f32 = 6.0;
+const WIDTH: u32 = 1920;
+const HEIGHT: u32 = 1440;
+const SCALE: f32 = 4.0;
+const SHAPE: f32 = 8.0;
 
 const TYPES: i8 = 6;
-const PARTICLES: usize = 10_000;
+const PARTICLES: usize = 20_000;
 
 fn main() -> Result<(), pixels::Error> {
     println!("Number of Particles: {}", PARTICLES);
@@ -111,18 +111,16 @@ fn main() -> Result<(), pixels::Error> {
     let mut render_durations = Vec::with_capacity(100);
     let mut timing_start = std::time::Instant::now();
 
+    let mut total_frame_times = Vec::with_capacity(100);
+    let mut last_frame = std::time::Instant::now();
+
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            let start = std::time::Instant::now();
+            let this_frame = std::time::Instant::now();
+            total_frame_times.push(this_frame - last_frame);
+            last_frame = this_frame;
 
-            (types, vx, vy, px, py) = ctx
-                .step(&forces, &types, &vx, &vy, &px, &py, 0.005)
-                .expect("ERROR: ctx.step()");
-            ctx.sync();
-
-            let end = std::time::Instant::now();
-            sim_durations.push(end - start);
             let start = std::time::Instant::now();
 
             px.values(&mut res_x).expect("ERROR: px.get()");
@@ -131,6 +129,15 @@ fn main() -> Result<(), pixels::Error> {
 
             let end = std::time::Instant::now();
             transfer_durations.push(end - start);
+
+            let start = std::time::Instant::now();
+
+            (types, vx, vy, px, py) = ctx
+                .step(&forces, &types, &vx, &vy, &px, &py, 0.005)
+                .expect("ERROR: ctx.step()");
+
+            let end = std::time::Instant::now();
+            sim_durations.push(end - start);
             let start = std::time::Instant::now();
 
             let frame = pixels.frame_mut();
@@ -174,7 +181,7 @@ fn main() -> Result<(), pixels::Error> {
 
             if std::time::Instant::now() - timing_start > std::time::Duration::from_secs(30) {
                 println!(
-                    "Simulation: {} microseconds,\tTransferring: {} microseconds,\tRendering: {} microseconds",
+                    "Simulation: {} microseconds,\tTransferring: {} microseconds,\tRendering: {} microseconds\tTotal: {}",
                     (sim_durations
                         .iter()
                         .sum::<std::time::Duration>()
@@ -190,6 +197,11 @@ fn main() -> Result<(), pixels::Error> {
                         .sum::<std::time::Duration>()
                         .as_micros() as u64
                         / render_durations.len() as u64).separate_with_commas(),
+                    (total_frame_times
+                        .iter()
+                        .sum::<std::time::Duration>()
+                        .as_micros() as u64
+                        / total_frame_times.len() as u64).separate_with_commas(),
                 );
                 timing_start = std::time::Instant::now();
                 sim_durations.clear();
